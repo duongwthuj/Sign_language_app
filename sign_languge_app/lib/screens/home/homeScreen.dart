@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-class splashPage extends StatelessWidget {
-  const splashPage({super.key});
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(child: Text('Splash Page')),
+      body: Center(child: Text('Home Page')),
     );
   }
 }
