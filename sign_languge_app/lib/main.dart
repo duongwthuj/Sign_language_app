@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: AppRouter.splash,
       routes: {
-        AppRouter.splash: (context) => const splashScreen(),
+        AppRouter.splash: (context) => const SplashScreen(),
         AppRouter.home: (context) => const HomeScreen(),  
         AppRouter.camera: (context) => const CameraScreen(),
         AppRouter.history: (context) => const HistoryScreen(),

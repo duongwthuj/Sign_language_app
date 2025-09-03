@@ -178,3 +178,7 @@ mixin AnimationMixin<T extends StatefulWidget>
     pulseController.reset();
   }
 }
+
+
+
+// Logo animation manager
