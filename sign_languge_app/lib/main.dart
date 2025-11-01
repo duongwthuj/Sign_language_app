@@ -1,37 +1,61 @@
 import 'package:flutter/material.dart';
-import 'package:sign_languge_app/constants/app_router.dart';
-import 'package:sign_languge_app/constants/design_system.dart';
-import 'package:sign_languge_app/screens/camera/cameraScreen.dart';
-import 'package:sign_languge_app/screens/history/historyScreen.dart';
-import 'package:sign_languge_app/screens/home/homeScreen.dart';
-import 'package:sign_languge_app/screens/settings/settingScreen.dart';
-import 'package:sign_languge_app/screens/splash/splashScreen.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:sign_languge_app/firebase_options.dart';
+import 'package:sign_languge_app/features/auth/data/firebase_auth_repo.dart';
+import 'package:sign_languge_app/features/auth/presentation/cubits/auth_cubit.dart';
+import 'package:sign_languge_app/features/auth/presentation/cubits/auth_states.dart';
+import 'package:sign_languge_app/features/auth/presentation/pages/auth_page.dart';
+import 'package:sign_languge_app/features/home/presentation/pages/home_page.dart';
+import 'package:sign_languge_app/theme/dark_mode.dart';
+import 'package:sign_languge_app/theme/light_mode.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({super.key});
+
+  final firebaseAuthRepo = FirebaseAuthRepo();
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Sign Language App',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthCubit>(
+          create:
+              (context) => AuthCubit(authRepo: firebaseAuthRepo)..checkAuth(),
+        ),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+
+        theme: lightMode,
+        darkTheme: darkMode,
+
+        home: BlocConsumer<AuthCubit, AuthState>(
+          builder: (context, state) {
+            if (state is Unauthenticated) {
+              return const AuthScreen();
+            }
+            if (state is Authenticated) {
+              return const HomeScreen();
+            } else {
+              return const Center(child: CircularProgressIndicator());
+            }
+          },
+          listener: (context, state) {
+            if (state is AuthError) {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(state.message)));
+            }
+          },
         ),
       ),
-      initialRoute: AppRouter.splash,
-      routes: {
-        AppRouter.splash: (context) => const SplashScreen(),
-        AppRouter.home: (context) => const HomeScreen(),  
-        AppRouter.camera: (context) => const CameraScreen(),
-        AppRouter.history: (context) => const HistoryScreen(),
-        AppRouter.settings: (context) => const SettingsScreen(),
-      },
     );
   }
 }
