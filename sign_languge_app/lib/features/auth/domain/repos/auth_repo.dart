@@ -1,9 +1,3 @@
-/*
-
-AUTH REPOSITORY - Outlines the possible auth operations for this app.
-
-*/
-
 import '../entities/app_user.dart';
 
 abstract class AuthRepo {

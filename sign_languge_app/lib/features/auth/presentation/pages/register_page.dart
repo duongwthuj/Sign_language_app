@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:sign_languge_app/constants/systems_design.dart';
 import 'package:sign_languge_app/features/auth/presentation/pages/components/my_button.dart';
 import 'package:sign_languge_app/features/auth/presentation/pages/components/my_textfield.dart';
 import '../cubits/auth_cubit.dart';
@@ -22,37 +23,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   // register button pressed
   void register() async {
-    // prepare info
-    final String name = nameController.text;
-    final String email = emailController.text;
+    final String name = nameController.text.trim();
+    final String email = emailController.text.trim();
     final String pw = pwController.text;
     final String confirmPw = confirmPwController.text;
 
-    // auth cubit
     final authCubit = context.read<AuthCubit>();
 
-    // ensure fields aren't empty
-    if (email.isNotEmpty &&
-        name.isNotEmpty &&
-        pw.isNotEmpty &&
-        confirmPw.isNotEmpty) {
-      // ensure pw match
-      if (pw == confirmPw) {
-        authCubit.register(name, email, pw);
-      }
-      // pw doesn't match
-      else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Passwords do not match!")),
-        );
-      }
-    }
-    // fields are empty -> display error
-    else {
+    if (email.isEmpty || name.isEmpty || pw.isEmpty || confirmPw.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please complete all fields!")),
+        SnackBar(
+          content: const Text("Please complete all fields!"),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+        ),
       );
+      return;
     }
+
+    if (pw != confirmPw) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text("Passwords do not match!"),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+        ),
+      );
+      return;
+    }
+
+    authCubit.register(name, email, pw);
   }
 
   @override
@@ -67,101 +73,147 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // BUILD UI
   @override
   Widget build(BuildContext context) {
-    // SCAFFOLD
     return Scaffold(
-      // BODY
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 25.0),
-          child: SingleChildScrollView(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.lg),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // logo
-                Icon(
-                  Icons.lock_open,
-                  size: 80,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                SizedBox(height: AppSpacing.xl),
 
-                const SizedBox(height: 25),
-
-                // name of app
-                Text(
-                  "Let's create an account for you",
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Theme.of(context).colorScheme.inversePrimary,
+                // Logo with shadow
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [AppShadows.medium],
+                  ),
+                  child: Icon(
+                    Icons.person_add_outlined,
+                    size: 80,
+                    color: AppColors.primary,
                   ),
                 ),
 
-                const SizedBox(height: 25),
+                SizedBox(height: AppSpacing.lg),
 
-                // name textfield
+                // Title
+                Text("Create Account", style: AppTypography.h2),
+
+                SizedBox(height: AppSpacing.sm),
+
+                // Subtitle
+                Text(
+                  "Join us and start learning",
+                  style: AppTypography.bodySmall,
+                  textAlign: TextAlign.center,
+                ),
+
+                SizedBox(height: AppSpacing.xxl),
+
+                // Name input
                 MyTextfield(
                   controller: nameController,
-                  hintText: "Name",
+                  hintText: "Full name",
                   obscureText: false,
+                  prefixIcon: Icons.person_outline,
                 ),
 
-                const SizedBox(height: 10),
+                SizedBox(height: AppSpacing.md),
 
-                // email textfield
+                // Email input
                 MyTextfield(
                   controller: emailController,
-                  hintText: "Email",
+                  hintText: "Email address",
                   obscureText: false,
+                  prefixIcon: Icons.email_outlined,
                 ),
 
-                const SizedBox(height: 10),
+                SizedBox(height: AppSpacing.md),
 
-                // pw textfield
+                // Password input
                 MyTextfield(
                   controller: pwController,
                   hintText: "Password",
                   obscureText: true,
+                  prefixIcon: Icons.lock_outline,
                 ),
 
-                const SizedBox(height: 10),
+                SizedBox(height: AppSpacing.md),
 
-                // confirm pw textfield
+                // Confirm password input
                 MyTextfield(
                   controller: confirmPwController,
-                  hintText: "Confirm Password",
+                  hintText: "Confirm password",
                   obscureText: true,
+                  prefixIcon: Icons.lock_outline,
                 ),
 
-                const SizedBox(height: 25),
+                SizedBox(height: AppSpacing.lg),
 
-                // register button
+                // Sign up button
                 MyButton(onTap: register, text: "SIGN UP"),
 
-                const SizedBox(height: 25),
+                SizedBox(height: AppSpacing.xl),
 
-                // oath sign in later.. (google + apple)
+                // Divider
+                Row(
+                  children: [
+                    Expanded(
+                      child: Divider(
+                        color: AppColors.primary.withOpacity(0.2),
+                        thickness: 1,
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                      child: Text(
+                        "Or sign in",
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Divider(
+                        color: AppColors.primary.withOpacity(0.2),
+                        thickness: 1,
+                      ),
+                    ),
+                  ],
+                ),
 
-                // already have an account? login now
+                SizedBox(height: AppSpacing.lg),
+
+                // Sign in link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      "Already have an account?",
+                      "Already have an account? ",
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
                       ),
                     ),
                     GestureDetector(
                       onTap: widget.togglePages,
                       child: Text(
-                        " Login now",
+                        "Sign in here",
                         style: TextStyle(
+                          color: AppColors.primary,
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
+                          fontSize: 14,
                         ),
                       ),
                     ),
                   ],
                 ),
+
+                SizedBox(height: AppSpacing.xl),
               ],
             ),
           ),

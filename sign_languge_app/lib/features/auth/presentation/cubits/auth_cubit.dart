@@ -1,9 +1,3 @@
-/*
-
-Cubits are responsible for state management
-
-*/
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/repos/auth_repo.dart';

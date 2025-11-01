@@ -78,15 +78,11 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Icon
+                  // Title
                   Icon(Icons.mail_outline, size: 48, color: AppColors.primary),
                   SizedBox(height: AppSpacing.md),
-
-                  // Title
                   Text("Forgot Password?", style: AppTypography.h3),
                   SizedBox(height: AppSpacing.sm),
-
-                  // Subtitle
                   Text(
                     "Enter your email to receive a password reset link",
                     style: AppTypography.bodySmall,
