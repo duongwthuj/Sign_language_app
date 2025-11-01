@@ -7,6 +7,8 @@ import 'package:sign_languge_app/features/auth/presentation/cubits/auth_cubit.da
 import 'package:sign_languge_app/features/auth/presentation/cubits/auth_states.dart';
 import 'package:sign_languge_app/features/auth/presentation/pages/auth_page.dart';
 import 'package:sign_languge_app/features/home/presentation/pages/home_page.dart';
+import 'package:sign_languge_app/features/speech_to_text/data/speech_recognition_repo_impl.dart';
+import 'package:sign_languge_app/features/speech_to_text/presentation/cubits/speech_recognition_cubit.dart';
 import 'package:sign_languge_app/theme/dark_mode.dart';
 import 'package:sign_languge_app/theme/light_mode.dart';
 
@@ -28,6 +30,12 @@ class MyApp extends StatelessWidget {
         BlocProvider<AuthCubit>(
           create:
               (context) => AuthCubit(authRepo: firebaseAuthRepo)..checkAuth(),
+        ),
+        BlocProvider<SpeechRecognitionCubit>(
+          create: (context) {
+            final repo = SpeechRecognitionRepoImpl();
+            return SpeechRecognitionCubit(speechRepo: repo);
+          },
         ),
       ],
       child: MaterialApp(
