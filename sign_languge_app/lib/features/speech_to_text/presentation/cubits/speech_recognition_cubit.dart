@@ -11,7 +11,7 @@ class SpeechRecognitionCubit extends Cubit<SpeechRecognitionState> {
   StreamSubscription<SpeechResult>? _subscription;
 
   SpeechRecognitionCubit({required this.speechRepo})
-      : super(SpeechRecognitionInitial());
+    : super(SpeechRecognitionInitial());
 
   String get selectedLanguage => _selectedLanguage;
   SpeechResult? get lastResult => _lastResult;
@@ -25,9 +25,11 @@ class SpeechRecognitionCubit extends Cubit<SpeechRecognitionState> {
       final available = await speechRepo.isAvailable();
       if (!available) {
         if (!isClosed) {
-          emit(SpeechRecognitionNotAvailable(
-            'Speech recognition is not available on this device',
-          ));
+          emit(
+            SpeechRecognitionNotAvailable(
+              'Speech recognition is not available on this device',
+            ),
+          );
         }
       } else {
         if (!isClosed) emit(SpeechRecognitionInitial());
@@ -42,7 +44,8 @@ class SpeechRecognitionCubit extends Cubit<SpeechRecognitionState> {
     try {
       return await speechRepo.isAvailable();
     } catch (e) {
-      if (!isClosed) emit(SpeechRecognitionError('Availability check failed: $e'));
+      if (!isClosed)
+        emit(SpeechRecognitionError('Availability check failed: $e'));
       return false;
     }
   }
@@ -53,7 +56,8 @@ class SpeechRecognitionCubit extends Cubit<SpeechRecognitionState> {
       final languages = await speechRepo.getSupportedLanguages();
       print('Supported languages: $languages');
     } catch (e) {
-      if (!isClosed) emit(SpeechRecognitionError('Failed to load languages: $e'));
+      if (!isClosed)
+        emit(SpeechRecognitionError('Failed to load languages: $e'));
     }
   }
 
@@ -74,18 +78,21 @@ class SpeechRecognitionCubit extends Cubit<SpeechRecognitionState> {
       _subscription = null;
 
       // Lắng nghe stream mới
-      _subscription = speechRepo.speechResultStream.listen((result) {
-        if (isClosed) return; // Ngăn emit sau khi đóng
-        _lastResult = result;
+      _subscription = speechRepo.speechResultStream.listen(
+        (result) {
+          if (isClosed) return; // Ngăn emit sau khi đóng
+          _lastResult = result;
 
-        if (result.isFinal) {
-          emit(SpeechRecognitionSuccess(result));
-        } else {
-          emit(SpeechRecognitionListening(partialResult: result));
-        }
-      }, onError: (e) {
-        if (!isClosed) emit(SpeechRecognitionError('Stream error: $e'));
-      });
+          if (result.isFinal) {
+            emit(SpeechRecognitionSuccess(result));
+          } else {
+            emit(SpeechRecognitionListening(partialResult: result));
+          }
+        },
+        onError: (e) {
+          if (!isClosed) emit(SpeechRecognitionError('Stream error: $e'));
+        },
+      );
 
       await speechRepo.startListening(language: _selectedLanguage);
       if (!isClosed) emit(SpeechRecognitionListening());
@@ -108,7 +115,8 @@ class SpeechRecognitionCubit extends Cubit<SpeechRecognitionState> {
         }
       }
     } catch (e) {
-      if (!isClosed) emit(SpeechRecognitionError('Failed to stop listening: $e'));
+      if (!isClosed)
+        emit(SpeechRecognitionError('Failed to stop listening: $e'));
     }
   }
 
@@ -119,7 +127,8 @@ class SpeechRecognitionCubit extends Cubit<SpeechRecognitionState> {
       _lastResult = null;
       if (!isClosed) emit(SpeechRecognitionInitial());
     } catch (e) {
-      if (!isClosed) emit(SpeechRecognitionError('Failed to cancel listening: $e'));
+      if (!isClosed)
+        emit(SpeechRecognitionError('Failed to cancel listening: $e'));
     }
   }
 
@@ -136,7 +145,7 @@ class SpeechRecognitionCubit extends Cubit<SpeechRecognitionState> {
       _subscription = null;
       await speechRepo.dispose();
       _lastResult = null;
-      if (!isClosed) emit(SpeechRecognitionInitial());
+      // ❌ Không emit ở đây - vì sau này sẽ close Cubit
     } catch (e) {
       print('Error disposing speech resources: $e');
     }
@@ -144,9 +153,13 @@ class SpeechRecognitionCubit extends Cubit<SpeechRecognitionState> {
 
   @override
   Future<void> close() async {
-    await _subscription?.cancel();
-    _subscription = null;
-    await speechRepo.dispose();
+    try {
+      await _subscription?.cancel();
+      _subscription = null;
+      await speechRepo.dispose();
+    } catch (e) {
+      print('Error closing cubit: $e');
+    }
     return super.close();
   }
 }
