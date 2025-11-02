@@ -22,23 +22,26 @@ class SpeechResultViewPage extends StatefulWidget {
 
 class _SpeechResultViewPageState extends State<SpeechResultViewPage> {
   late TextEditingController _textController;
+  late SpeechResultCubit _cubit;
 
   @override
   void initState() {
     super.initState();
     _textController = TextEditingController(text: widget.result.text);
+    _cubit = SpeechResultCubit(result: widget.result);
   }
 
   @override
   void dispose() {
     _textController.dispose();
+    _cubit.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => SpeechResultCubit(result: widget.result),
+    return BlocProvider.value(
+      value: _cubit,
       child: BlocListener<SpeechResultCubit, SpeechResultState>(
         listener: (context, state) {
           if (state is TextCopied) {
@@ -278,9 +281,7 @@ class _SpeechResultViewPageState extends State<SpeechResultViewPage> {
           _buildMetadataRow(
             icon: Icons.schedule,
             label: 'Thời lượng',
-            value: context.read<SpeechResultCubit>().formatDuration(
-              widget.result.duration,
-            ),
+            value: _cubit.formatDuration(widget.result.duration),
             color: AppColors.primary,
           ),
           SizedBox(height: AppSpacing.lg),
@@ -362,10 +363,7 @@ class _SpeechResultViewPageState extends State<SpeechResultViewPage> {
               child: _buildActionButton(
                 icon: Icons.copy,
                 label: 'Sao chép',
-                onTap:
-                    () => context.read<SpeechResultCubit>().copyToClipboard(
-                      _textController.text,
-                    ),
+                onTap: () => _cubit.copyToClipboard(_textController.text),
                 color: Colors.blue,
               ),
             ),
@@ -374,10 +372,7 @@ class _SpeechResultViewPageState extends State<SpeechResultViewPage> {
               child: _buildActionButton(
                 icon: Icons.share,
                 label: 'Chia sẻ',
-                onTap:
-                    () => context.read<SpeechResultCubit>().shareText(
-                      _textController.text,
-                    ),
+                onTap: () => _cubit.shareText(_textController.text),
                 color: Colors.purple,
               ),
             ),
@@ -390,10 +385,7 @@ class _SpeechResultViewPageState extends State<SpeechResultViewPage> {
               child: _buildActionButton(
                 icon: Icons.videocam,
                 label: 'Ký hiệu',
-                onTap:
-                    () => context.read<SpeechResultCubit>().requestSignLanguage(
-                      _textController.text,
-                    ),
+                onTap: () => _cubit.requestSignLanguage(_textController.text),
                 color: Colors.orange,
               ),
             ),
