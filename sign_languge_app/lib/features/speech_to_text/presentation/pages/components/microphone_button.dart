@@ -31,7 +31,7 @@ class MicrophoneButton extends StatelessWidget {
             if (isActive)
               TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0, end: 1),
-                duration: Duration(milliseconds: 500),
+                duration: const Duration(milliseconds: 500),
                 builder: (context, value, child) {
                   return Container(
                     width: size + (value * 30),
@@ -47,6 +47,7 @@ class MicrophoneButton extends StatelessWidget {
                 },
               ),
             SizedBox(height: AppSpacing.md),
+
             // Main button
             GestureDetector(
               onTap:
@@ -84,12 +85,13 @@ class MicrophoneButton extends StatelessWidget {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Icon
+                    // Microphone icon
                     Icon(
                       isActive ? Icons.mic : Icons.mic_none,
                       size: size * 0.4,
                       color: AppColors.surface,
                     ),
+
                     // Loading indicator
                     if (state is SpeechRecognitionLoading)
                       SizedBox(
@@ -107,12 +109,16 @@ class MicrophoneButton extends StatelessWidget {
               ),
             ),
             SizedBox(height: AppSpacing.md),
-            // Status text
+
+            // Status text with animation
+            // Status text with animation
             AnimatedSwitcher(
-              duration: Duration(milliseconds: 300),
+              duration: const Duration(milliseconds: 300),
+              switchInCurve: Curves.easeIn,
+              switchOutCurve: Curves.easeOut,
               child: Text(
                 _getStatusText(state),
-                key: ValueKey<String>(_getStatusKey(state)),
+                key: ValueKey(_getStatusText(state)),
                 style: AppTypography.bodyLarge.copyWith(
                   color: _getStatusColor(state),
                   fontWeight: FontWeight.w500,
@@ -126,27 +132,14 @@ class MicrophoneButton extends StatelessWidget {
   }
 
   String _getStatusText(SpeechRecognitionState state) {
-    if (state is SpeechRecognitionLoading) {
-      return 'Initializing...';
-    } else if (state is SpeechRecognitionListening) {
-      return 'Listening...';
-    } else if (state is SpeechRecognitionSuccess) {
-      return 'Done';
-    } else if (state is SpeechRecognitionError) {
+    if (state is SpeechRecognitionLoading) return 'Initializing...';
+    if (state is SpeechRecognitionListening) return 'Listening...';
+    if (state is SpeechRecognitionSuccess) return 'Done';
+    if (state is SpeechRecognitionError) {
       return 'Error: ${state.message.split(':').last.trim()}';
-    } else if (state is SpeechRecognitionNotAvailable) {
-      return 'Not Available';
     }
+    if (state is SpeechRecognitionNotAvailable) return 'Not Available';
     return 'Tap to speak';
-  }
-
-  String _getStatusKey(SpeechRecognitionState state) {
-    if (state is SpeechRecognitionLoading) return 'loading';
-    if (state is SpeechRecognitionListening) return 'listening';
-    if (state is SpeechRecognitionSuccess) return 'done';
-    if (state is SpeechRecognitionError) return 'error';
-    if (state is SpeechRecognitionNotAvailable) return 'not_available';
-    return 'idle';
   }
 
   Color _getStatusColor(SpeechRecognitionState state) {
