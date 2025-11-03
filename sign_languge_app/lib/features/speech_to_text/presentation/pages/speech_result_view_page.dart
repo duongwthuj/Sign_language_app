@@ -86,162 +86,76 @@ class _SpeechResultViewPageState extends State<SpeechResultViewPage> {
   }
 
   Widget _buildBody() {
-    return CustomScrollView(
-      slivers: [
-        // Gradient AppBar
-        SliverAppBar(
-          expandedHeight: 140,
-          floating: false,
-          pinned: true,
-          backgroundColor: AppColors.surface,
-          elevation: 0,
-          flexibleSpace: FlexibleSpaceBar(
-            background: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Colors.green.shade400, Colors.green.shade600],
-                ),
-              ),
-              child: Padding(
-                padding: EdgeInsets.only(
-                  left: AppSpacing.lg,
-                  right: AppSpacing.lg,
-                  bottom: AppSpacing.md,
-                  top: AppSpacing.md,
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.check_circle, color: Colors.white, size: 28),
-                        SizedBox(width: AppSpacing.md),
-                        Text(
-                          'Ghi âm thành công',
-                          style: AppTypography.h2.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 26,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Kết quả nhận diện của bạn',
-                      style: AppTypography.bodyLarge.copyWith(
-                        color: Colors.white.withOpacity(0.85),
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
-            onPressed: () => Navigator.pop(context),
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: Colors.green.shade600,
+        elevation: 0,
+        title: Text(
+          'Kết quả nhận diện',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        // Main Content
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildRecognizedTextCard(),
-                SizedBox(height: AppSpacing.xxl),
-                _buildMetadataCard(),
-                SizedBox(height: AppSpacing.xxl),
-                Text(
-                  'Hành động',
-                  style: AppTypography.h4.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 18,
-                  ),
-                ),
-                SizedBox(height: AppSpacing.lg),
-                _buildActionButtonsGrid(),
-                SizedBox(height: AppSpacing.xxl),
-              ],
-            ),
-          ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
         ),
-      ],
+      ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildRecognizedTextCard(),
+            SizedBox(height: 24),
+            _buildMetadataCard(),
+            SizedBox(height: 24),
+            _buildActionButtonsGrid(),
+            SizedBox(height: 24),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildRecognizedTextCard() {
     return Container(
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: Colors.green.withOpacity(0.3), width: 2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.green.withOpacity(0.1),
-            blurRadius: 12,
-            spreadRadius: 0,
-          ),
-        ],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.green.withValues(alpha: 0.3),
+          width: 2,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: Colors.green.withOpacity(0.2),
-                  width: 1,
-                ),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.text_fields, color: Colors.green, size: 24),
-                ),
-                SizedBox(width: AppSpacing.md),
-                Text(
-                  'Văn bản nhận diện',
-                  style: AppTypography.h4.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+          Text(
+            'Văn bản nhận diện:',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.green,
             ),
           ),
-          Padding(
-            padding: EdgeInsets.all(AppSpacing.lg),
-            child: TextField(
-              controller: _textController,
-              maxLines: 5,
-              style: AppTypography.bodyLarge.copyWith(
-                color: AppColors.textPrimary,
-                height: 1.6,
-                fontSize: 16,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Nội dung được nhận diện',
-                hintStyle: AppTypography.bodyLarge.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-                border: InputBorder.none,
-              ),
+          SizedBox(height: 12),
+          TextField(
+            controller: _textController,
+            maxLines: 5,
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 16,
+              height: 1.6,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Nội dung được nhận diện',
+              hintStyle: TextStyle(color: AppColors.textSecondary),
+              border: InputBorder.none,
             ),
           ),
         ],
@@ -251,51 +165,48 @@ class _SpeechResultViewPageState extends State<SpeechResultViewPage> {
 
   Widget _buildMetadataCard() {
     return Container(
-      padding: EdgeInsets.all(AppSpacing.lg),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppColors.primary.withOpacity(0.2),
-          width: 1.5,
+          color: AppColors.primary.withValues(alpha: 0.2),
+          width: 2,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Chi tiết nhận diện',
-            style: AppTypography.h4.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w700,
+            'Thông tin:',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
             ),
           ),
-          SizedBox(height: AppSpacing.lg),
+          SizedBox(height: 12),
           _buildMetadataRow(
-            icon: Icons.precision_manufacturing,
-            label: 'Độ chính xác',
+            label: 'Độ chính xác:',
             value: '${(widget.result.confidence * 100).toStringAsFixed(1)}%',
             color: _getConfidenceColor(widget.result.confidence),
           ),
-          SizedBox(height: AppSpacing.lg),
+          SizedBox(height: 12),
           _buildMetadataRow(
-            icon: Icons.schedule,
-            label: 'Thời lượng',
+            label: 'Thời lượng:',
             value: _cubit.formatDuration(widget.result.duration),
             color: AppColors.primary,
           ),
-          SizedBox(height: AppSpacing.lg),
+          SizedBox(height: 12),
           _buildMetadataRow(
-            icon: Icons.language,
-            label: 'Ngôn ngữ',
+            label: 'Ngôn ngữ:',
             value: widget.result.language.toUpperCase(),
             color: Colors.blue,
           ),
-          SizedBox(height: AppSpacing.lg),
+          SizedBox(height: 12),
           _buildMetadataRow(
-            icon: Icons.info_outline,
-            label: 'Trạng thái',
-            value: widget.result.isFinal ? 'Kết quả cuối' : 'Kết quả tạm',
+            label: 'Trạng thái:',
+            value: widget.result.isFinal ? 'Cuối' : 'Tạm',
             color: widget.result.isFinal ? Colors.green : Colors.orange,
           ),
         ],
@@ -304,7 +215,6 @@ class _SpeechResultViewPageState extends State<SpeechResultViewPage> {
   }
 
   Widget _buildMetadataRow({
-    required IconData icon,
     required String label,
     required String value,
     required Color color,
@@ -312,41 +222,27 @@ class _SpeechResultViewPageState extends State<SpeechResultViewPage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(AppRadius.md),
-              ),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            SizedBox(width: AppSpacing.md),
-            Text(
-              label,
-              style: AppTypography.bodyLarge.copyWith(
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
+        Text(
+          label,
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w500,
+            fontSize: 13,
+          ),
         ),
         Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(color: color.withOpacity(0.3)),
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
           ),
           child: Text(
             value,
-            style: AppTypography.bodySmall.copyWith(
+            style: TextStyle(
               color: color,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
             ),
           ),
         ),
@@ -367,20 +263,7 @@ class _SpeechResultViewPageState extends State<SpeechResultViewPage> {
                 color: Colors.blue,
               ),
             ),
-            SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: _buildActionButton(
-                icon: Icons.share,
-                label: 'Chia sẻ',
-                onTap: () => _cubit.shareText(_textController.text),
-                color: Colors.purple,
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: AppSpacing.md),
-        Row(
-          children: [
+            SizedBox(width: 12),
             Expanded(
               child: _buildActionButton(
                 icon: Icons.videocam,
@@ -389,7 +272,11 @@ class _SpeechResultViewPageState extends State<SpeechResultViewPage> {
                 color: Colors.orange,
               ),
             ),
-            SizedBox(width: AppSpacing.md),
+          ],
+        ),
+        SizedBox(height: 12),
+        Row(
+          children: [
             Expanded(
               child: _buildActionButton(
                 icon: Icons.refresh,
@@ -399,6 +286,15 @@ class _SpeechResultViewPageState extends State<SpeechResultViewPage> {
                   Navigator.pop(context);
                 },
                 color: AppColors.primary,
+              ),
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: _buildActionButton(
+                icon: Icons.arrow_back,
+                label: 'Quay lại',
+                onTap: () => Navigator.pop(context),
+                color: Colors.grey,
               ),
             ),
           ],
@@ -416,24 +312,22 @@ class _SpeechResultViewPageState extends State<SpeechResultViewPage> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.lg,
-        ),
+        padding: EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: color.withOpacity(0.3), width: 2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
         ),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 28),
-            SizedBox(height: AppSpacing.sm),
+            Icon(icon, color: color, size: 24),
+            SizedBox(height: 8),
             Text(
               label,
-              style: AppTypography.bodySmall.copyWith(
+              style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.w600,
+                fontSize: 13,
               ),
               textAlign: TextAlign.center,
             ),

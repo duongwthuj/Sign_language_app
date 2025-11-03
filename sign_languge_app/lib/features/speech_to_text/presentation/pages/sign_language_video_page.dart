@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:video_player/video_player.dart';
+import 'dart:convert';
 import '../../../../constants/systems_design.dart';
 
 class SignLanguageVideoPage extends StatefulWidget {
@@ -13,6 +16,14 @@ class SignLanguageVideoPage extends StatefulWidget {
 class _SignLanguageVideoPageState extends State<SignLanguageVideoPage> {
   bool _isLoading = false;
   String? _error;
+  List<String> _videoUrls = []; // Danh sách URLs
+  int _currentVideoIndex = 0; // Video hiện tại đang phát
+  String? _language = 'vi_VN';
+  VideoPlayerController? _videoPlayerController;
+  bool _isVideoPlaying = false;
+
+  // Backend API endpoint
+  static const String API_BASE_URL = 'http://192.168.73.101:5000';
 
   @override
   void initState() {
@@ -20,7 +31,64 @@ class _SignLanguageVideoPageState extends State<SignLanguageVideoPage> {
     _fetchSignLanguageVideo();
   }
 
-  // TODO: Gọi API từ backend để lấy video ký hiệu
+  @override
+  void dispose() {
+    _videoPlayerController?.dispose();
+    super.dispose();
+  }
+
+  // Khởi tạo video player
+  void _initializeVideoPlayer(String videoUrl) {
+    // Giải phóng video player cũ nếu có
+    _videoPlayerController?.dispose();
+
+    _videoPlayerController = VideoPlayerController.networkUrl(
+        Uri.parse(videoUrl),
+      )
+      ..initialize()
+          .then((_) {
+            setState(() {
+              _isVideoPlaying = true;
+            });
+            _videoPlayerController!.play();
+
+            // Lắng nghe sự kiện kết thúc video
+            _videoPlayerController!.addListener(_onVideoEnd);
+          })
+          .catchError((error) {
+            setState(() {
+              _error = '❌ Lỗi phát video: $error';
+            });
+            print('❌ Video player error: $error');
+          });
+  }
+
+  // Kiểm tra video có kết thúc không, nếu có thì phát video tiếp theo
+  void _onVideoEnd() {
+    if (_videoPlayerController != null &&
+        _videoPlayerController!.value.position >=
+            _videoPlayerController!.value.duration) {
+      _playNextVideo();
+    }
+  }
+
+  // Phát video tiếp theo
+  void _playNextVideo() {
+    if (_currentVideoIndex < _videoUrls.length - 1) {
+      setState(() {
+        _currentVideoIndex++;
+      });
+      print('▶️  Phát video ${_currentVideoIndex + 1}/${_videoUrls.length}');
+      _initializeVideoPlayer(_videoUrls[_currentVideoIndex]);
+    } else {
+      setState(() {
+        _isVideoPlaying = false;
+      });
+      print('✅ Đã phát xong tất cả ${_videoUrls.length} video');
+    }
+  }
+
+  // Gọi API từ backend để lấy video ký hiệu
   Future<void> _fetchSignLanguageVideo() async {
     setState(() {
       _isLoading = true;
@@ -28,22 +96,95 @@ class _SignLanguageVideoPageState extends State<SignLanguageVideoPage> {
     });
 
     try {
-      // Placeholder API call
-      // final response = await signLanguageApi.getVideo(widget.text);
-      // _videoUrl = response.videoUrl;
+      print('🔄 Gọi API: $API_BASE_URL/api/generate-video');
+      print('📝 Text: ${widget.text}');
 
-      // Tạm thời sử dụng delay để mô phỏng API call
-      await Future.delayed(Duration(seconds: 2));
+      final response = await http
+          .post(
+            Uri.parse('$API_BASE_URL/api/generate-video'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'text': widget.text, 'language': _language}),
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout:
+                () =>
+                    throw Exception(
+                      'Request timeout - Backend không phản hồi. Đảm bảo backend chạy tại $API_BASE_URL',
+                    ),
+          );
 
+      print('✅ Response status: ${response.statusCode}');
+      print('📦 Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+
+        if (jsonResponse['success'] == true) {
+          // Lấy danh sách video URLs
+          final videoUrls = List<String>.from(jsonResponse['videoUrls'] ?? []);
+
+          if (videoUrls.isEmpty) {
+            throw Exception('Không có video nào được tìm thấy');
+          }
+
+          setState(() {
+            _videoUrls = videoUrls;
+            _currentVideoIndex = 0;
+            _isLoading = false;
+          });
+
+          print('✅ Nhận được ${videoUrls.length} video(s)');
+          for (int i = 0; i < videoUrls.length; i++) {
+            print('   Video ${i + 1}: ${videoUrls[i]}');
+          }
+
+          // 🎬 Khởi tạo video đầu tiên
+          _initializeVideoPlayer(_videoUrls[0]);
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('✅ Đã tải ${videoUrls.length} video ký hiệu!'),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        } else {
+          throw Exception(jsonResponse['error'] ?? 'Lỗi không xác định');
+        }
+      } else if (response.statusCode == 404) {
+        final jsonResponse = jsonDecode(response.body);
+        final missingWords = jsonResponse['missing_words'] ?? [];
+
+        setState(() {
+          _error =
+              '❌ Không tìm thấy video cho các từ: ${missingWords.join(", ")}';
+          _isLoading = false;
+        });
+      } else {
+        throw Exception('❌ Lỗi từ server: ${response.statusCode}');
+      }
+    } on http.ClientException catch (e) {
       setState(() {
-        // TODO: _videoUrl = response.videoUrl từ backend
+        _error =
+            '❌ Lỗi kết nối: Không thể kết nối đến backend.\n'
+            'Backend URL: $API_BASE_URL\n'
+            'Error: $e\n\n'
+            'Đảm bảo:\n'
+            '1. Backend đang chạy\n'
+            '2. Emulator có kết nối internet\n'
+            '3. Firewall cho phép port 5000';
         _isLoading = false;
       });
+      print('❌ Connection error: $e');
     } catch (e) {
       setState(() {
-        _error = 'Không thể tải video: $e';
+        _error = '❌ Lỗi: $e';
         _isLoading = false;
       });
+      print('❌ Error: $e');
     }
   }
 
@@ -51,100 +192,53 @@ class _SignLanguageVideoPageState extends State<SignLanguageVideoPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        slivers: [
-          // Gradient AppBar
-          SliverAppBar(
-            expandedHeight: 120,
-            floating: false,
-            pinned: true,
-            backgroundColor: AppColors.surface,
-            elevation: 0,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Colors.orange.shade400, Colors.orange.shade600],
-                  ),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: AppSpacing.lg,
-                    right: AppSpacing.lg,
-                    bottom: AppSpacing.md,
-                    top: AppSpacing.md,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.videocam, color: Colors.white, size: 28),
-                          SizedBox(width: AppSpacing.md),
-                          Expanded(
-                            child: Text(
-                              'Video Ký Hiệu',
-                              style: AppTypography.h2.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 26,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Xem cách biểu diễn ký hiệu',
-                        style: AppTypography.bodyLarge.copyWith(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+      appBar: AppBar(
+        backgroundColor: Colors.orange.shade600,
+        elevation: 0,
+        title: Row(
+          children: [
+            Icon(Icons.videocam, color: Colors.white),
+            SizedBox(width: 8),
+            Text(
+              'Video Ký Hiệu',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
-          // Main Content
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Text being signed
-                  _buildTextCard(),
-                  SizedBox(height: AppSpacing.xxl),
-                  // Video or Loading/Error
-                  _buildVideoSection(),
-                  SizedBox(height: AppSpacing.xxl),
-                  // Action Buttons
-                  _buildActionButtons(),
-                  SizedBox(height: AppSpacing.xxl),
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Text being signed
+            _buildTextCard(),
+            SizedBox(height: 24),
+            // Video section
+            _buildVideoSection(),
+            SizedBox(height: 24),
+            // Action buttons
+            _buildActionButtons(),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildTextCard() {
     return Container(
-      padding: EdgeInsets.all(AppSpacing.lg),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: Colors.orange.withValues(alpha: 0.3),
           width: 2,
@@ -153,34 +247,22 @@ class _SignLanguageVideoPageState extends State<SignLanguageVideoPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.text_fields, color: Colors.orange, size: 24),
-              ),
-              SizedBox(width: AppSpacing.md),
-              Text(
-                'Văn bản',
-                style: AppTypography.h4.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
+          Text(
+            'Văn bản:',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.orange,
+            ),
           ),
-          SizedBox(height: AppSpacing.md),
+          SizedBox(height: 8),
           Text(
             widget.text,
-            style: AppTypography.bodyLarge.copyWith(
-              color: AppColors.textPrimary,
-              height: 1.6,
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
+              height: 1.5,
             ),
           ),
         ],
@@ -189,184 +271,155 @@ class _SignLanguageVideoPageState extends State<SignLanguageVideoPage> {
   }
 
   Widget _buildVideoSection() {
+    // Loading state
     if (_isLoading) {
       return Container(
         height: 300,
         decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          color: Colors.black87,
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: AppColors.primary.withValues(alpha: 0.2),
-            width: 1.5,
+            color: Colors.orange.withValues(alpha: 0.3),
+            width: 2,
           ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(color: Colors.orange),
-            SizedBox(height: AppSpacing.lg),
-            Text(
-              'Đang tải video...',
-              style: AppTypography.bodyLarge.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(color: Colors.orange),
+              SizedBox(height: 16),
+              Text('Đang tải video...', style: TextStyle(color: Colors.white)),
+            ],
+          ),
         ),
       );
     }
 
+    // Error state
     if (_error != null) {
       return Container(
-        padding: EdgeInsets.all(AppSpacing.lg),
+        padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.red.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: Colors.red, width: 1.5),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.red, width: 2),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(Icons.error_outline, color: Colors.red, size: 24),
-                SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Text(
-                    'Lỗi',
-                    style: AppTypography.h4.copyWith(
-                      color: Colors.red,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: AppSpacing.md),
             Text(
-              _error!,
-              style: AppTypography.bodyLarge.copyWith(color: Colors.red),
+              'Lỗi',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
             ),
+            SizedBox(height: 8),
+            Text(_error!, style: TextStyle(color: Colors.red, fontSize: 14)),
           ],
         ),
       );
     }
 
+    // Video player
     return Container(
       height: 300,
       decoration: BoxDecoration(
         color: Colors.black87,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: Colors.orange.withValues(alpha: 0.3),
           width: 2,
         ),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.orange.withValues(alpha: 0.2),
-            ),
-            child: Icon(
-              Icons.play_circle_filled,
-              size: 60,
-              color: Colors.orange,
-            ),
-          ),
-          SizedBox(height: AppSpacing.lg),
-          Text(
-            'Video Demo Ký Hiệu',
-            style: AppTypography.h4.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(height: AppSpacing.sm),
-          Text(
-            'Nhấn để phát video',
-            style: AppTypography.bodySmall.copyWith(
-              color: Colors.white.withValues(alpha: 0.7),
-            ),
-          ),
-        ],
-      ),
+      child:
+          _videoPlayerController != null &&
+                  _videoPlayerController!.value.isInitialized
+              ? Column(
+                children: [
+                  Expanded(
+                    child: AspectRatio(
+                      aspectRatio: _videoPlayerController!.value.aspectRatio,
+                      child: VideoPlayer(_videoPlayerController!),
+                    ),
+                  ),
+                  Container(
+                    color: Colors.black,
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            _videoPlayerController!.value.isPlaying
+                                ? Icons.pause
+                                : Icons.play_arrow,
+                            color: Colors.orange,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _videoPlayerController!.value.isPlaying
+                                  ? _videoPlayerController!.pause()
+                                  : _videoPlayerController!.play();
+                            });
+                          },
+                        ),
+                        Expanded(
+                          child: VideoProgressIndicator(
+                            _videoPlayerController!,
+                            allowScrubbing: true,
+                            colors: VideoProgressColors(
+                              playedColor: Colors.orange,
+                              bufferedColor: Colors.orange.withValues(
+                                alpha: 0.5,
+                              ),
+                              backgroundColor: Colors.grey.withValues(
+                                alpha: 0.5,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              )
+              : Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(color: Colors.orange),
+                    SizedBox(height: 16),
+                    Text(
+                      'Khởi tạo (${_currentVideoIndex + 1}/${_videoUrls.length})',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
     );
   }
 
   Widget _buildActionButtons() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
       children: [
-        Text(
-          'Hành động',
-          style: AppTypography.h4.copyWith(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
+        Expanded(
+          child: _buildActionButton(
+            icon: Icons.refresh,
+            label: 'Tải lại',
+            onTap: _fetchSignLanguageVideo,
+            color: Colors.orange,
           ),
         ),
-        SizedBox(height: AppSpacing.lg),
-        Row(
-          children: [
-            Expanded(
-              child: _buildActionButton(
-                icon: Icons.refresh,
-                label: 'Tải lại',
-                onTap: _fetchSignLanguageVideo,
-                color: AppColors.primary,
-              ),
-            ),
-            SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: _buildActionButton(
-                icon: Icons.download,
-                label: 'Tải xuống',
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Tải xuống video sắp ra mắt'),
-                      backgroundColor: AppColors.primary,
-                    ),
-                  );
-                },
-                color: Colors.green,
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: AppSpacing.md),
-        Row(
-          children: [
-            Expanded(
-              child: _buildActionButton(
-                icon: Icons.share,
-                label: 'Chia sẻ',
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Chia sẻ sắp ra mắt'),
-                      backgroundColor: Colors.purple,
-                    ),
-                  );
-                },
-                color: Colors.purple,
-              ),
-            ),
-            SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: _buildActionButton(
-                icon: Icons.arrow_back,
-                label: 'Quay lại',
-                onTap: () => Navigator.pop(context),
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
+        SizedBox(width: 12),
+        Expanded(
+          child: _buildActionButton(
+            icon: Icons.arrow_back,
+            label: 'Quay lại',
+            onTap: () => Navigator.pop(context),
+            color: Colors.grey,
+          ),
         ),
       ],
     );
@@ -381,24 +434,22 @@ class _SignLanguageVideoPageState extends State<SignLanguageVideoPage> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.lg,
-        ),
+        padding: EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
         ),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 28),
-            SizedBox(height: AppSpacing.sm),
+            Icon(icon, color: color, size: 24),
+            SizedBox(height: 8),
             Text(
               label,
-              style: AppTypography.bodySmall.copyWith(
+              style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.w600,
+                fontSize: 13,
               ),
               textAlign: TextAlign.center,
             ),

@@ -6,7 +6,7 @@ import 'speech_recognition_state.dart';
 
 class SpeechRecognitionCubit extends Cubit<SpeechRecognitionState> {
   final SpeechRecognitionRepoImpl speechRepo;
-  String _selectedLanguage = 'vi_VN';
+  String _selectedLanguage = 'en_US';
   SpeechResult? _lastResult;
   StreamSubscription<SpeechResult>? _subscription;
 

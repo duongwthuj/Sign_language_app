@@ -16,150 +16,66 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        slivers: [
-          // 🎯 Custom AppBar with gradient
-          SliverAppBar(
-            expandedHeight: 140,
-            floating: false,
-            pinned: true,
-            backgroundColor: AppColors.surface,
-            elevation: 0,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppColors.primary,
-                      AppColors.primary.withOpacity(0.7),
-                    ],
-                  ),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: AppSpacing.lg,
-                    right: AppSpacing.lg,
-                    bottom: AppSpacing.lg,
-                    top: AppSpacing.md,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Xin chào!',
-                        style: AppTypography.h2.copyWith(
-                          color: AppColors.surface,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 28,
-                        ),
-                      ),
-                      SizedBox(height: AppSpacing.xs),
-                      Text(
-                        'Giao tiếp dễ dàng hơn với ngôn ngữ ký hiệu',
-                        style: AppTypography.bodyLarge.copyWith(
-                          color: AppColors.surface.withOpacity(0.85),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+      appBar: AppBar(
+        backgroundColor: AppColors.primary,
+        elevation: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Xin chào!',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
             ),
-            actions: [
-              Padding(
-                padding: EdgeInsets.only(right: AppSpacing.md),
-                child: Center(
-                  child: PopupMenuButton<String>(
-                    icon: Icon(Icons.more_vert, color: AppColors.textPrimary),
-                    itemBuilder:
-                        (BuildContext context) => <PopupMenuEntry<String>>[
-                          PopupMenuItem<String>(
-                            value: 'settings',
-                            child: Row(
-                              children: [
-                                Icon(Icons.settings, size: 20),
-                                SizedBox(width: AppSpacing.md),
-                                Text('Settings'),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem<String>(
-                            value: 'help',
-                            child: Row(
-                              children: [
-                                Icon(Icons.help, size: 20),
-                                SizedBox(width: AppSpacing.md),
-                                Text('Help'),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuDivider(),
-                          PopupMenuItem<String>(
-                            value: 'logout',
-                            child: Row(
-                              children: [
-                                Icon(Icons.logout, size: 20, color: Colors.red),
-                                SizedBox(width: AppSpacing.md),
-                                Text(
-                                  'Logout',
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                    onSelected: (String value) {
-                      if (value == 'logout') {
-                        _showLogoutDialog(context);
-                      } else if (value == 'settings') {
-                        // TODO: Navigate to settings
-                      } else if (value == 'help') {
-                        // TODO: Navigate to help
-                      }
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-          // 📱 Main Content
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 🚀 Primary Feature - Speech Recognition
-                  _buildPrimaryFeatureCard(context),
-                  SizedBox(height: AppSpacing.xxl),
-
-                  // 📚 Other Features Grid
-                  Text(
-                    'Khác',
-                    style: AppTypography.h4.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 18,
+            Text(
+              'Giao tiếp dễ dàng hơn',
+              style: TextStyle(fontSize: 12, color: Colors.white70),
+            ),
+          ],
+        ),
+        actions: [
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert, color: Colors.white),
+            itemBuilder:
+                (BuildContext context) => <PopupMenuEntry<String>>[
+                  PopupMenuItem<String>(
+                    value: 'logout',
+                    child: Row(
+                      children: [
+                        Icon(Icons.logout, size: 20, color: Colors.red),
+                        SizedBox(width: 12),
+                        Text('Logout', style: TextStyle(color: Colors.red)),
+                      ],
                     ),
                   ),
-                  SizedBox(height: AppSpacing.lg),
-                  _buildFeaturesGrid(context),
-                  SizedBox(height: AppSpacing.xxl),
                 ],
-              ),
-            ),
+            onSelected: (String value) {
+              if (value == 'logout') {
+                _showLogoutDialog(context);
+              }
+            },
           ),
         ],
+      ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildPrimaryFeatureCard(context),
+            SizedBox(height: 24),
+            _buildFeaturesGrid(context),
+            SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }
 
-  // 🌟 Primary Feature Card
   Widget _buildPrimaryFeatureCard(BuildContext context) {
     return GestureDetector(
       onTap: () {
@@ -171,99 +87,84 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
       child: Container(
+        padding: EdgeInsets.all(20),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.primary, AppColors.primary.withOpacity(0.6)],
-          ),
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          color: AppColors.primary,
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.3),
+              color: AppColors.primary.withValues(alpha: 0.3),
               blurRadius: 16,
               spreadRadius: 2,
             ),
           ],
         ),
-        child: Container(
-          padding: EdgeInsets.all(AppSpacing.xl),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Icon with badge
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      color: AppColors.surface.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                    ),
-                    child: Icon(Icons.mic, size: 40, color: AppColors.surface),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: AppSpacing.sm,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.flash_on, size: 16, color: Colors.green),
-                        SizedBox(width: 4),
-                        Text(
-                          'Popular',
-                          style: TextStyle(
-                            color: Colors.green,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: AppSpacing.lg),
-              // Title and description
-              Text(
-                'Ghi âm & Nhận diện',
-                style: AppTypography.h3.copyWith(
-                  color: AppColors.surface,
-                  fontWeight: FontWeight.w800,
+                  child: Icon(Icons.mic, size: 36, color: Colors.white),
                 ),
-              ),
-              SizedBox(height: AppSpacing.sm),
-              Text(
-                'Ghi âm lời nói và chuyển đổi thành ngôn ngữ ký hiệu. Hỗ trợ giao tiếp thực thời cho người khiếm thính.',
-                style: AppTypography.bodyLarge.copyWith(
-                  color: AppColors.surface.withOpacity(0.9),
-                  height: 1.5,
-                ),
-              ),
-              SizedBox(height: AppSpacing.lg),
-              // CTA Button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Bắt đầu ghi âm',
-                    style: AppTypography.bodyLarge.copyWith(
-                      color: AppColors.surface,
-                      fontWeight: FontWeight.w700,
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Popular',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Icon(Icons.arrow_forward, color: AppColors.surface, size: 24),
-                ],
+                ),
+              ],
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Ghi âm & Nhận diện',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
               ),
-            ],
-          ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Ghi âm lời nói và chuyển đổi thành ký hiệu',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
+            SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Bắt đầu',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -336,82 +237,55 @@ class _HomeScreenState extends State<HomeScreen> {
             backgroundColor: color,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.md),
+              borderRadius: BorderRadius.circular(8),
             ),
           ),
         );
       },
       child: Container(
+        padding: EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: color.withOpacity(0.2), width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.1),
-              blurRadius: 8,
-              spreadRadius: 0,
-            ),
-          ],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.2), width: 2),
         ),
-        child: Stack(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // Background accent
-            Positioned(
-              top: -20,
-              right: -20,
-              child: Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.05),
-                  shape: BoxShape.circle,
-                ),
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
               ),
+              child: Icon(icon, color: color, size: 22),
             ),
-            // Content
-            Padding(
-              padding: EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: Icon(icon, color: color, size: 24),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: AppTypography.bodyLarge.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        description,
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppColors.textSecondary,
-                          fontSize: 12,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 4),
+                Text(
+                  description,
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 11,
                   ),
-                ],
-              ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ],
         ),
