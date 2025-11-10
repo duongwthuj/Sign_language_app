@@ -2,9 +2,13 @@
 <network-security-config>
     <!-- Allow cleartext traffic for local development -->
     <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">172.11.129.38</domain>
         <domain includeSubdomains="true">192.168.73.101</domain>
+        <domain includeSubdomains="true">192.168.73.103</domain>
         <domain includeSubdomains="true">localhost</domain>
         <domain includeSubdomains="true">127.0.0.1</domain>
         <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true"> 0.0.0.0</domain> 
+        <domain includeSubdomains="true">*</domain>
     </domain-config>
 </network-security-config>

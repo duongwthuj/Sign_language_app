@@ -35,35 +35,35 @@ class SpeechRecognitionRepoImpl implements SpeechRecognitionRepo {
   Future<void> initialize() async {
     try {
       if (_isInitialized) {
-        print('Speech recognition already initialized');
+        // print('Speech recognition already initialized');
         return;
       }
 
-      print('Attempting to initialize speech recognition...');
+      // print('Attempting to initialize speech recognition...');
 
       bool available = await _speechToText.initialize(
         onError: (error) {
-          print('Speech to text error: $error');
+          // print('Speech to text error: $error');
         },
         onStatus: (status) {
-          print('Speech to text status: $status');
+          // print('Speech to text status: $status');
         },
         debugLogging: true, // Enable debug logging
       );
 
-      print('Speech recognition available: $available');
+      // print('Speech recognition available: $available');
 
       if (!available) {
         // Try with different locale
-        print(
-          'Speech recognition not available with default locale, trying en_US...',
-        );
+        // print(
+          // 'Speech recognition not available with default locale, trying en_US...',
+        // );
         available = await _speechToText.initialize(
           onError: (error) {
-            print('Speech to text error (en_US): $error');
+            // print('Speech to text error (en_US): $error');
           },
           onStatus: (status) {
-            print('Speech to text status (en_US): $status');
+            // print('Speech to text status (en_US): $status');
           },
           debugLogging: true,
         );
@@ -74,10 +74,10 @@ class SpeechRecognitionRepoImpl implements SpeechRecognitionRepo {
       }
 
       _isInitialized = true;
-      print('Speech recognition initialized successfully');
+      // print('Speech recognition initialized successfully');
     } catch (e) {
       _isInitialized = false;
-      print('Initialization exception: $e');
+      // print('Initialization exception: $e');
       throw Exception('Failed to initialize speech recognition: $e');
     }
   }
@@ -93,7 +93,7 @@ class SpeechRecognitionRepoImpl implements SpeechRecognitionRepo {
       await initialize();
       return true;
     } catch (e) {
-      print('Error checking availability: $e');
+      // print('Error checking availability: $e');
       return false;
     }
   }
@@ -115,12 +115,12 @@ class SpeechRecognitionRepoImpl implements SpeechRecognitionRepo {
   }) async {
     try {
       if (!_isInitialized) {
-        print('Speech recognition not initialized, initializing now...');
+        // print('Speech recognition not initialized, initializing now...');
         await initialize();
       }
 
       if (_isListening) {
-        print('Already listening, stopping first...');
+        // print('Already listening, stopping first...');
         await stopListening();
       }
 
@@ -129,7 +129,7 @@ class SpeechRecognitionRepoImpl implements SpeechRecognitionRepo {
       _isListeningStreamController.add(true);
       _startTime = DateTime.now();
 
-      print('Starting listening with language: $language');
+      // print('Starting listening with language: $language');
 
       await _speechToText.listen(
         onResult: (result) {
@@ -150,20 +150,20 @@ class SpeechRecognitionRepoImpl implements SpeechRecognitionRepo {
           // Emit result through stream
           _speechResultStreamController.add(speechResult);
 
-          print(
-            'Speech result: ${speechResult.text}, isFinal: ${result.finalResult}, duration: $duration',
-          );
+          // print(
+          //   'Speech result: ${speechResult.text}, isFinal: ${result.finalResult}, duration: $duration',
+          // );
         },
         localeId: language,
         listenFor: timeout,
       );
 
-      print('Listening started successfully');
+      // print('Listening started successfully');
     } catch (e) {
       _isListening = false;
       _isListeningStreamController.add(false);
       _startTime = null;
-      print('Error in startListening: $e');
+      // print('Error in startListening: $e');
       throw Exception('Failed to start listening: $e');
     }
   }
@@ -212,7 +212,7 @@ class SpeechRecognitionRepoImpl implements SpeechRecognitionRepo {
       await _speechResultStreamController.close();
       await _isListeningStreamController.close();
     } catch (e) {
-      print('Error disposing speech recognition: $e');
+      // print('Error disposing speech recognition: $e');
     }
   }
 

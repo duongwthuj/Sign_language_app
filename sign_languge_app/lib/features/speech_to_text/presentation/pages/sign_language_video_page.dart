@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:video_player/video_player.dart';
 import 'dart:convert';
 import '../../../../constants/systems_design.dart';
+import '../../../../constants/api_config.dart';
 
 class SignLanguageVideoPage extends StatefulWidget {
   final String text;
@@ -23,7 +24,7 @@ class _SignLanguageVideoPageState extends State<SignLanguageVideoPage> {
   bool _isVideoPlaying = false;
 
   // Backend API endpoint
-  static const String API_BASE_URL = 'http://192.168.73.101:5000';
+  static final String API_BASE_URL = ApiConfig.defaultBaseUrl;
 
   @override
   void initState() {
@@ -38,29 +39,38 @@ class _SignLanguageVideoPageState extends State<SignLanguageVideoPage> {
   }
 
   // Khởi tạo video player
-  void _initializeVideoPlayer(String videoUrl) {
-    // Giải phóng video player cũ nếu có
-    _videoPlayerController?.dispose();
+  Future<void> _initializeVideoPlayer(String videoUrl) async {
+    try {
+      // Giải phóng video player cũ nếu có
+      _videoPlayerController?.dispose();
 
-    _videoPlayerController = VideoPlayerController.networkUrl(
+      print('Initializing video player with URL: $videoUrl');
+
+      _videoPlayerController = VideoPlayerController.networkUrl(
         Uri.parse(videoUrl),
-      )
-      ..initialize()
-          .then((_) {
-            setState(() {
-              _isVideoPlaying = true;
-            });
-            _videoPlayerController!.play();
+      );
 
-            // Lắng nghe sự kiện kết thúc video
-            _videoPlayerController!.addListener(_onVideoEnd);
-          })
-          .catchError((error) {
-            setState(() {
-              _error = '❌ Lỗi phát video: $error';
-            });
-            print('❌ Video player error: $error');
-          });
+      await _videoPlayerController!.initialize();
+
+      if (!mounted) return;
+
+      setState(() {
+        _isVideoPlaying = true;
+      });
+
+      _videoPlayerController!.play();
+      print('Video initialized and playing');
+
+      // Lắng nghe sự kiện kết thúc video
+      _videoPlayerController!.addListener(_onVideoEnd);
+    } catch (error) {
+      print('Error initializing video: $error');
+      if (mounted) {
+        setState(() {
+          _error = 'Video error: $error';
+        });
+      }
+    }
   }
 
   // Kiểm tra video có kết thúc không, nếu có thì phát video tiếp theo
@@ -73,13 +83,13 @@ class _SignLanguageVideoPageState extends State<SignLanguageVideoPage> {
   }
 
   // Phát video tiếp theo
-  void _playNextVideo() {
+  void _playNextVideo() async {
     if (_currentVideoIndex < _videoUrls.length - 1) {
       setState(() {
         _currentVideoIndex++;
       });
-      print('▶️  Phát video ${_currentVideoIndex + 1}/${_videoUrls.length}');
-      _initializeVideoPlayer(_videoUrls[_currentVideoIndex]);
+      print('Playing video ${_currentVideoIndex + 1}/${_videoUrls.length}');
+      await _initializeVideoPlayer(_videoUrls[_currentVideoIndex]);
     } else {
       setState(() {
         _isVideoPlaying = false;
@@ -96,8 +106,8 @@ class _SignLanguageVideoPageState extends State<SignLanguageVideoPage> {
     });
 
     try {
-      print('🔄 Gọi API: $API_BASE_URL/api/generate-video');
-      print('📝 Text: ${widget.text}');
+      print('Calling API: $API_BASE_URL/api/generate-video');
+      print('Text: ${widget.text}');
 
       final response = await http
           .post(
@@ -109,13 +119,11 @@ class _SignLanguageVideoPageState extends State<SignLanguageVideoPage> {
             const Duration(seconds: 30),
             onTimeout:
                 () =>
-                    throw Exception(
-                      'Request timeout - Backend không phản hồi. Đảm bảo backend chạy tại $API_BASE_URL',
-                    ),
+                    throw Exception('Request timeout - Backend not responding'),
           );
 
-      print('✅ Response status: ${response.statusCode}');
-      print('📦 Response body: ${response.body}');
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
@@ -134,18 +142,17 @@ class _SignLanguageVideoPageState extends State<SignLanguageVideoPage> {
             _isLoading = false;
           });
 
-          print('✅ Nhận được ${videoUrls.length} video(s)');
+          print('Received ${videoUrls.length} video(s)');
           for (int i = 0; i < videoUrls.length; i++) {
-            print('   Video ${i + 1}: ${videoUrls[i]}');
+            print('Video ${i + 1}: ${videoUrls[i]}');
           }
 
-          // 🎬 Khởi tạo video đầu tiên
-          _initializeVideoPlayer(_videoUrls[0]);
+          await _initializeVideoPlayer(_videoUrls[0]);
 
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('✅ Đã tải ${videoUrls.length} video ký hiệu!'),
+                content: Text('Loaded ${videoUrls.length} videos'),
                 backgroundColor: Colors.green,
                 duration: const Duration(seconds: 2),
               ),
@@ -159,32 +166,24 @@ class _SignLanguageVideoPageState extends State<SignLanguageVideoPage> {
         final missingWords = jsonResponse['missing_words'] ?? [];
 
         setState(() {
-          _error =
-              '❌ Không tìm thấy video cho các từ: ${missingWords.join(", ")}';
+          _error = 'No videos found for: ${missingWords.join(", ")}';
           _isLoading = false;
         });
       } else {
-        throw Exception('❌ Lỗi từ server: ${response.statusCode}');
+        throw Exception('Server error: ${response.statusCode}');
       }
     } on http.ClientException catch (e) {
       setState(() {
-        _error =
-            '❌ Lỗi kết nối: Không thể kết nối đến backend.\n'
-            'Backend URL: $API_BASE_URL\n'
-            'Error: $e\n\n'
-            'Đảm bảo:\n'
-            '1. Backend đang chạy\n'
-            '2. Emulator có kết nối internet\n'
-            '3. Firewall cho phép port 5000';
+        _error = 'Connection error: Cannot reach backend.\nURL: $API_BASE_URL';
         _isLoading = false;
       });
-      print('❌ Connection error: $e');
+      print('Connection error: $e');
     } catch (e) {
       setState(() {
-        _error = '❌ Lỗi: $e';
+        _error = 'Error: $e';
         _isLoading = false;
       });
-      print('❌ Error: $e');
+      print('Error: $e');
     }
   }
 
